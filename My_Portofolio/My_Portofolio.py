@@ -1,18 +1,34 @@
 from rxconfig import config
 import reflex as rx
 import pymysql
-
-conn = pymysql.connect(
-    host="sql.freedb.tech",
-    user='freedb_osama',
-    password="qz!5sxM!YFyaV7V",
-    db="freedb_OsamaAbdElMohsenPortofolio",
+from reflex.components.datadisplay.dataeditor import (
+    DataEditorTheme,
 )
-
-# cur = conn.cursor()
-# cur.execute("select * from data")
-# output = cur.fetchall()
-
+dark_theme = {
+    "accent_color": "#044B1E",
+    "accent_light": "#021215",
+    "text_dark": "#c7c9c9",
+    "text_header": "#2bc381",
+    "text_header_selected": "#000000",
+    "bg_cell": "rgba(4, 27, 30, 1)",
+    "bg_cell_medium": "#001315",
+    "bg_header": "#002d28",
+    "bg_header_has_focus": "#143430",
+    "bg_header_hovered": "#143430",
+    "bg_bubble": "#212121",
+    "bg_bubble_selected": "#000000",
+    "border_color": "#002d28",
+    "header_font_style": "bold 25px",
+    "base_font_style": "bold 20px",
+}
+def connect_db():
+    return pymysql.connect(
+        host="sql.freedb.tech",
+        user='freedb_osama',
+        password="qz!5sxM!YFyaV7V",
+        db="freedb_OsamaAbdElMohsenPortofolio",
+    )
+conn = connect_db()
 
 style = {
     '@keyframes move-it': {
@@ -29,11 +45,8 @@ style = {
 
 }
 
-
 class State(rx.State):
     """The app state."""
-
-
 class CardSwitcherState(rx.State):
     current_card_index: int = 0
     names = ["Python", "C", "HTML"]
@@ -69,7 +82,6 @@ def navbar():
         top="0px",
         z_index="500",
     )
-
 
 def skill(skillName, precentage, image):
     return rx.card(
@@ -213,57 +225,201 @@ def index() -> rx.Component:
     )
 
 
-class InputBlurState(rx.State):
-
+class DataEditorState_HP(rx.State):
     cat: str = ' '
     Image_Path: str = ' '
     Header: str = ' '
     Description: str = ' '
     Tags: str = ' '
-    newdata : int = 2
+    newdata: int = 2
+    delete_id : int
+
+    clicked_data: str = "Cell clicked: "
+
+    cols: list[str] = [
+        {"title": "Id",
+        "type": "int",
+        "width": 50,
+        },
+        {
+            "title": "Category",
+            "type": "str",
+        },
+        {
+            "title": "Image_Path",
+            "type": "str",
+            "width": 350,
+        },
+        {
+            "title": "Header",
+            "type": "str",
+        },
+        {
+            "title": "Description",
+            "type": "str",
+            "width": 400,
+        },
+        {
+            "title": "Tags",
+            "type": "str",
+            "width": 300,
+        },
+    ]
+
+    def refresh_dataB():
+        data = []
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("select * from data")
+        output = list(cur.fetchall())
+        cur.close()
+        data += output
+        return data
+
+    data: list = refresh_dataB()
 
     def add_data(self):
         if self.cat != ' ' and self.Image_Path != ' ' and self.Header != ' ' and self.Description != ' ' and self.Tags != ' ':
+            conn = connect_db()
             cur = conn.cursor()
             sql = "INSERT INTO data (Category, Image_Path, Header, Description, Tags) VALUES (%s, %s, %s, %s, %s)"
             value = (self.cat, self.Image_Path, self.Header,self.Description, self.Tags)
             cur.execute(sql, value)
             conn.commit()
+            cur.close()
+            self.refresh_data()
 
-    
+    def click_cell(self, pos):
+        col, row = pos
+        self.data = []
+        self.refresh_data()
 
-def Data() -> rx.Component:
+    def get_edited_data(self, pos, val) -> str:
+        col, row = pos
+        # self.data[row][col] = val["data"]
+        print("self.data[row][col] = ", self.data[row][col])
+        print(f"Id {self.data[row][0]} Edited")
+        print(f"current data =  {self.data[row][col]} ")
+        print("new value = ", val['data'])
+        
+        conn = connect_db()
+        cur = conn.cursor()
+        if col == 1 :
+            sql = "UPDATE data SET Category = %s WHERE Id = %s"
+            state = True 
+        elif col == 2 :
+            sql = "UPDATE data SET  Image_Path = %s WHERE Id = %s"
+            state = True 
+        elif col == 3 :
+            sql = "UPDATE data SET  Header = %s WHERE Id = %s"
+            state = True 
+        elif col == 4 :
+            sql = "UPDATE data SET  Description = %s WHERE Id = %s"
+            state = True 
+        elif col == 5 :
+            sql = "UPDATE data SET  Tags = %s WHERE Id = %s"
+            state = True 
+        else:
+            state = False
+            pass
 
-    cur = conn.cursor()
-    cur.execute("select * from data")
-    output = cur.fetchall()
-    rows = list(output)
+        if state :
+            value = (val['data'],self.data[row][0])
+            cur.execute(sql, value)
+            conn.commit()
+            cur.close()
+            self.refresh_data()
+        
+    def refresh_data(self):
+        self.data = []
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("select * from data")
+        output = list(cur.fetchall())
+        cur.close()
+        self.data += output
 
+    def set_delete_id(self, text: str):
+        try:
+            self.delete_id = int(text)
+        except :
+            pass
+    def delete_data(self):
+        try : 
+            conn = connect_db()
+            cur = conn.cursor()
+            cur.execute(f"DELETE FROM data WHERE Id = {self.delete_id}")
+            conn.commit()
+            cur.close()
+            self.refresh_data()
+        except :
+            pass
+
+
+def table():
     return rx.chakra.center(
         rx.chakra.vstack(
             navbar(),
+            rx.chakra.spacer(),
+            rx.chakra.spacer(),
+            rx.chakra.spacer(),
+            rx.chakra.spacer(),
+            rx.vstack(
+                rx.card(
+                    rx.card(
+                        rx.flex(
+                            rx.chakra.input(focus_border_color='#2bc381',placeholder="Category", on_blur=DataEditorState_HP.set_cat),
+                            rx.chakra.input(focus_border_color='#2bc381',placeholder="Image_Path", on_blur=DataEditorState_HP.set_Image_Path),
+                            rx.chakra.input(focus_border_color='#2bc381',placeholder="Header", on_blur=DataEditorState_HP.set_Header),
+                            spacing = '4',
+                            direction = 'row',
+                        ),
+                        variant = 'ghost'
+                    ),
+                    rx.card(
+                        rx.flex(
+                        rx.chakra.input(focus_border_color='#2bc381',placeholder="Description",on_blur=DataEditorState_HP.set_Description),
+                        rx.chakra.input(focus_border_color='#2bc381',placeholder="Tags", on_blur=DataEditorState_HP.set_Tags),
+                        rx.chakra.button(rx.icon(tag="plus",stroke_width=2.5),"Add", on_click=DataEditorState_HP.add_data,width='100%',bg="#ecfdf5",color="#047857",spacing ="10"),
+                            spacing = '4',
+                            direction = 'row',
+                        ),
+                        variant = 'ghost'
+                    ),
+                    variant = 'ghost'
+                ),
+            ),
+            rx.chakra.spacer(),
+            rx.chakra.spacer(),
+            rx.chakra.divider(border_color="#2bc381"),
+            rx.chakra.spacer(),
+            rx.chakra.spacer(),
+            rx.flex(
+                    rx.chakra.button(rx.icon(tag="refresh-ccw",stroke_width=2.5),"Refresh Data", on_click=DataEditorState_HP.refresh_data,bg="#d2eafc",color="#1a78c2",width="100%",spacing ="10"),
+                    rx.chakra.input(focus_border_color='#2bc381',placeholder = "Delete", on_blur = DataEditorState_HP.set_delete_id,width="100%"),
+                    rx.chakra.button(rx.icon(tag="trash",stroke_width=2.5),"Delete", on_click=DataEditorState_HP.delete_data,width="100%",bg="#fef2f2",color="#b91c1c",spacing ="10"),
+                    spacing = '4',
+                    direction = 'row'
+                ),
+            rx.chakra.spacer(),
+            rx.chakra.spacer(),
+            rx.chakra.divider(border_color="#2bc381"),
             rx.hstack(
-                rx.chakra.input(
-                    placeholder="Category", on_blur=InputBlurState.set_cat),
-                rx.chakra.input(
-                    placeholder="Image_Path", on_blur=InputBlurState.set_Image_Path),
-                rx.chakra.input(
-                    placeholder="Header", on_blur=InputBlurState.set_Header),
-                rx.chakra.input(placeholder="Description",
-                                on_blur=InputBlurState.set_Description),
-                rx.chakra.input(
-                    placeholder="Tags", on_blur=InputBlurState.set_Tags),
-                rx.chakra.button("Add", on_click=InputBlurState.add_data),
+                rx.data_editor(
+                    columns=DataEditorState_HP.cols,
+                    data=DataEditorState_HP.data,
+                    on_cell_edited=DataEditorState_HP.get_edited_data, 
+                    row_height=80,  # Adjusting row height for better readability
+                    font_size="5em",
+                    theme=DataEditorTheme(**dark_theme),
+                    fixed_shadow_x	= False	,
+                    fixed_shadow_y	= False	,
+                    column_select = 'none'
+
+
+                    ),
                 
             ),
-            rx.chakra.table_container(
-                rx.chakra.table(
-                    headers=["Id", "Category", "Image_Path",'Header', 'Description', 'Tags'],
-                    rows=rows,
-                    footers=["Footer 1", "Footer 2", "Footer 3"],
-                    variant="striped",
-                )
-            )
         ),
         padding="5em"
     )
@@ -284,5 +440,4 @@ app = rx.App(
     )
 )
 app.add_page(index)
-
-app.add_page(Data, route="/data")
+app.add_page(table, route="/table")
