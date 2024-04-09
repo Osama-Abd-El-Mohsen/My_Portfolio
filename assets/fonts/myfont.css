@@ -1,0 +1,59 @@
+@font-face {
+    font-family: Rich;
+    src: url("/fonts/Rich.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: wsBind;
+    src: url("/fonts/wsBind.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: Urban;
+    src: url("/fonts/Urban.otf") format("opentype");
+}
+
+@font-face {
+    font-family: Azonix;
+    src: url("/fonts/Azonix.otf") format("opentype");
+}
+
+@font-face {
+    font-family: rocer-zonk;
+    src: url("/fonts/rocer-zonk.otf") format("opentype");
+}
+
+@font-face {
+    font-family: stoked;
+    src: url("/fonts/stoked.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: Marisa;
+    src: url("/fonts/Marisa.otf") format("opentype");
+}
+
+@font-face {
+    font-family: Nordic;
+    src: url("/fonts/Nordic.ttf") format("truetype");
+}
+@font-face {
+    font-family: Arkhip;
+    src: url("/fonts/Arkhip.ttf") format("truetype");
+}
+@font-face {
+    font-family: Prime;
+    src: url("/fonts/Prime.ttf") format("truetype");
+}
+@font-face {
+    font-family: FiraCode;
+    src: url("/fonts/FiraCode.ttf") format("truetype");
+}
+@font-face {
+    font-family: MPLUS1Code;
+    src: url("/fonts/MPLUS1Code.ttf") format("truetype");
+}
+@font-face {
+    font-family: JetBrainsMono;
+    src: url("/fonts/JetBrainsMono.ttf") format("truetype");
+}
