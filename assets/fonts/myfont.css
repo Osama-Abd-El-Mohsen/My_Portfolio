@@ -57,3 +57,36 @@
     font-family: JetBrainsMono;
     src: url("/fonts/JetBrainsMono.ttf") format("truetype");
 }
+
+@font-face {
+    font-family: HexaframeCF-Regular;
+    src: url("/fonts/HexaframeCF-Regular.ttf") format("truetype");
+}
+@font-face {
+    font-family: HexaframeCF-RegularOblique;
+    src: url("/fonts/HexaframeCF-RegularOblique.ttf") format("truetype");
+}
+@font-face {
+    font-family: Hackonedash;
+    src: url("/fonts/Hackonedash.ttf") format("truetype");
+}
+@font-face {
+    font-family: Hackone;
+    src: url("/fonts/Hackone.ttf") format("truetype");
+}
+@font-face {
+    font-family: Vobca-Black;
+    src: url("/fonts/Vobca-Black.otf") format("opentype");
+}
+@font-face {
+    font-family: Vobca-Light;
+    src: url("/fonts/Vobca-Light.otf") format("opentype");
+}
+@font-face {
+    font-family: Vobca-Regular;
+    src: url("/fonts/Vobca-Regular.otf") format("opentype");
+}
+@font-face {
+    font-family: Vobca-Thin;
+    src: url("/fonts/Vobca-Thin.otf") format("opentype");
+}

@@ -5,14 +5,20 @@ from reflex.components.datadisplay.dataeditor import (
     DataEditorTheme,
 )
 
+
 ######################################################################
 #############################  Style & DB ###########################
 #####################################################################
+
+light_green = '#ECFDF5'
+normal_green = '#2BC381'
+dark_green = 'rgba(4, 27, 30, 0.7)'
+
 dark_theme = {
     "accent_color": "#044B1E",
     "accent_light": "#021215",
-    "text_dark": "#c7c9c9",
-    "text_header": "#2bc381",
+    "text_dark": light_green,
+    "text_header": normal_green,
     "text_header_selected": "#000000",
     "bg_cell": "rgba(4, 27, 30, 1)",
     "bg_cell_medium": "#001315",
@@ -67,7 +73,7 @@ class State(rx.State):
 
 class DataEditorState_HP(rx.State):
 
-    def Get_db_User_info():
+    def Get_db_User_info(*args):
         sql = 'SELECT * FROM user_info LIMIT 1'
         conn = connect_db()
         cur = conn.cursor()
@@ -81,7 +87,12 @@ class DataEditorState_HP(rx.State):
     password: str = ''
     logo: str = ''
     pio: str = ''
+    user_nametemp: str = ''
+    passwordtemp: str = ''
+    logotemp: str = ''
+    piotemp: str = ''
     (x, user_name, password, logo, pio) = Get_db_User_info()
+    (x, user_nametemp, passwordtemp, logotemp, piotemp) = Get_db_User_info()
 
     cat: str = ' '
     Image_Path: str = ' '
@@ -136,6 +147,10 @@ class DataEditorState_HP(rx.State):
     data: list = refresh_dataB()
 
     def update_user_info(self):
+        self.user_name = self.user_nametemp
+        self.password = self.passwordtemp
+        self.logo = self.logotemp
+        self.pio = self.piotemp
         conn = connect_db()
         cur = conn.cursor()
         sql = "UPDATE user_info SET Username = %s ,password = %s ,logo_icon = %s ,pio = %s WHERE Id = 1"
@@ -143,6 +158,7 @@ class DataEditorState_HP(rx.State):
         cur.execute(sql, value)
         conn.commit()
         cur.close()
+        self.refresh_data()
 
     def add_data(self):
         if self.cat != ' ' and self.Image_Path != ' ' and self.Header != ' ' and self.Description != ' ' and self.Tags != ' ':
@@ -150,7 +166,7 @@ class DataEditorState_HP(rx.State):
             cur = conn.cursor()
             sql = "INSERT INTO data (Category, Image_Path, Header, Description, Tags) VALUES (%s, %s, %s, %s, %s)"
             value = (self.cat, self.Image_Path, self.Header,
-                     self.Description, self.Tags)
+                    self.Description, self.Tags)
             cur.execute(sql, value)
             conn.commit()
             cur.close()
@@ -198,6 +214,11 @@ class DataEditorState_HP(rx.State):
             self.refresh_data()
 
     def refresh_data(self):
+        (self.x, self.user_name, self.password, self.logo, self.pio) = self.Get_db_User_info()
+        print('='*100)
+        print('user_info = ')
+        print((self.x, self.user_name, self.password, self.logo, self.pio))        
+        print('='*100)
         self.data = []
         conn = connect_db()
         cur = conn.cursor()
@@ -205,6 +226,12 @@ class DataEditorState_HP(rx.State):
         output = list(cur.fetchall())
         cur.close()
         self.data += output
+        print('='*100)
+        print('self.data = ')
+        print(self.data)
+        print('='*100)
+        print('output = ')
+        print(output)
 
     def set_delete_id(self, text: str):
         try:
@@ -250,6 +277,7 @@ class Portal_password(rx.State):
         else:
             self.state = 0
 
+
 ######################################################################
 ##############################  Classes  #############################
 ######################################################################
@@ -264,8 +292,8 @@ def navbar():
     return rx.chakra.box(
         rx.chakra.hstack(
             rx.chakra.hstack(
-                rx.chakra.image(src="/favicon.ico", width="50px"),
-                rx.heading("Osama Abd El Mohsen"),
+                rx.chakra.image(src=DataEditorState_HP.logo, width="50px"),
+                rx.heading(DataEditorState_HP.user_name),
             ),
             justify="space-between",
             padding_x="2em",
@@ -280,21 +308,20 @@ def navbar():
         z_index="500",
     )
 
-
 def bottombar():
     return rx.flex(
         rx.hstack(
             rx.text(
-                "© 2024 Developed and Designed With 💖 by : ",
-                size='3',
-                font_family="Azonix",
-                color="#9ca3af",
+                "© 2024 Developed and Designed With 💖 by : ".upper(),
+                size='5',
+                font_family="Vobca-Black",
+                color=light_green,
             ),
             rx.text(
-                "Osama Abd El Mohsen",
-                size='3',
-                font_family="Azonix",
-                color="#2BC381",
+                "Osama Abd El Mohsen".upper(),
+                size='5',
+                font_family="Vobca-Black",
+                color=normal_green,
             ),
             align="center",
             justify="center",
@@ -308,7 +335,7 @@ def bottombar():
         padding="2px",
         background_color='rgba(4, 27, 30, 1)',
         z_index="500",
-        color="#9ca3af",
+        color=light_green,
     )
 
 ######################################################################
@@ -355,7 +382,9 @@ def skill(skillName, precentage, image):
 ############################  Helper Func  ###########################
 ######################################################################
 def letter_heading(char):
-    return rx.chakra.heading(char, font_size="2em", font_family="JetBrainsMono", color="#9ca3af")
+    return rx.center(
+        rx.chakra.text(char, font_size="2em", font_family="Hackonedash", color=light_green,text_shadow=f"0 0 5px {normal_green}"),
+        )
 
 
 def Get_db_password():
@@ -380,7 +409,7 @@ def password_ui():
                 on_complete=Portal_password.Check_password(),
                 mask=True,
                 shadow="md",
-                color="#2bc381"
+                color=normal_green
             ),
         ),
     )
@@ -395,6 +424,7 @@ def password_ui():
 
 
 def index() -> rx.Component:
+    DataEditorState_HP.refresh_data()
     return rx.chakra.center(
         rx.chakra.vstack(
             navbar(),
@@ -414,12 +444,12 @@ def index() -> rx.Component:
                     rx.hstack(
                         rx.flex(
                             rx.flex(
-                                rx.foreach(list('Data'), letter_heading),
+                                rx.foreach(list('Data'.upper()), letter_heading),
                                 direction="column",
                                 size="3xl"
                             ),
                             rx.flex(
-                                rx.foreach(list('Analysis'), letter_heading),
+                                rx.foreach(list('Analysis'.upper()), letter_heading),
                                 direction="column",
                                 size="3xl"
                             ),
@@ -479,7 +509,7 @@ def index() -> rx.Component:
                             spacing='3',
                         ),
                         rx.flex(
-                            rx.foreach(list('Python'), letter_heading),
+                            rx.foreach(list('Python'.upper()), letter_heading),
                             direction="column",
                             spacing="3",
                             width='10%',
@@ -499,6 +529,7 @@ def index() -> rx.Component:
 
 
 def portal_true():
+    DataEditorState_HP.refresh_data()
     return rx.chakra.center(
         rx.chakra.vstack(
             navbar(),
@@ -512,8 +543,8 @@ def portal_true():
                     rx.card(
                         rx.card(
                             rx.flex(
-                                rx.chakra.heading(
-                                    'Update User Info', color='#9ca3af',font_family="Azonix",),
+                                rx.chakra.text(
+                                    'Update User Info'.upper(), color=normal_green,font_family="Hackonedash",font_size='3em'),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -522,9 +553,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', placeholder='User Name', value=DataEditorState_HP.user_name, on_change=DataEditorState_HP.set_user_name),
+                                    focus_border_color=normal_green, placeholder='User Name', value=DataEditorState_HP.user_name, on_change=DataEditorState_HP.set_user_nametemp),
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', type_="password", max_length="8", placeholder='Password', value=DataEditorState_HP.password, on_change=DataEditorState_HP.set_password),
+                                    focus_border_color=normal_green, type_="password", max_length="8", placeholder='Password', value=DataEditorState_HP.password, on_change=DataEditorState_HP.set_passwordtemp),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -533,7 +564,7 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.text_area(
-                                    focus_border_color='#2bc381', placeholder='pio', font_size="1em", width='100%', value=DataEditorState_HP.pio, on_change=DataEditorState_HP.set_pio),
+                                    focus_border_color=normal_green, placeholder='pio', font_size="1em", width='100%', value=DataEditorState_HP.pio, on_change=DataEditorState_HP.set_piotemp),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -542,8 +573,8 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', placeholder='Icon url', value=DataEditorState_HP.logo, on_change=DataEditorState_HP.set_logo),
-                                rx.chakra.button(rx.icon(tag="save", stroke_width=2.5), "Update",on_click=DataEditorState_HP.update_user_info, width='100%', bg="#ecfdf5", color="#047857", spacing="10"),
+                                    focus_border_color=normal_green, placeholder='Icon url', value=DataEditorState_HP.logo, on_change=DataEditorState_HP.set_logotemp),
+                                rx.chakra.button(rx.icon(tag="save", stroke_width=2.5), "Update",on_click=DataEditorState_HP.update_user_info, width='100%', bg=dark_green, color=light_green, spacing="10"),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -555,7 +586,7 @@ def portal_true():
                     rx.chakra.spacer(),
                     rx.chakra.spacer(),
                     rx.chakra.center(
-                        rx.chakra.divider(border_color="#2bc381",orientation="vertical"),
+                        rx.chakra.divider(border_color=normal_green,orientation="vertical"),
                         height="20em",
                         align = 'center'
                     ),
@@ -565,8 +596,8 @@ def portal_true():
                             rx.card(
                         rx.card(
                             rx.flex(
-                                rx.chakra.heading(
-                                    'Update Data ', color='#9ca3af',font_family="Azonix"),
+                                rx.chakra.text(
+                                    'Update Data '.upper(), color=normal_green,font_family="Hackonedash",font_size='3em'),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -575,9 +606,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', placeholder="Category", on_blur=DataEditorState_HP.set_cat),
+                                    focus_border_color=normal_green, placeholder="Category", on_blur=DataEditorState_HP.set_cat),
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', placeholder="Image_Path", on_blur=DataEditorState_HP.set_Image_Path),
+                                    focus_border_color=normal_green, placeholder="Image_Path", on_blur=DataEditorState_HP.set_Image_Path),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -586,9 +617,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', placeholder="Header", on_blur=DataEditorState_HP.set_Header),
+                                    focus_border_color=normal_green, placeholder="Header", on_blur=DataEditorState_HP.set_Header),
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', placeholder="Description", on_blur=DataEditorState_HP.set_Description),
+                                    focus_border_color=normal_green, placeholder="Description", on_blur=DataEditorState_HP.set_Description),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -597,8 +628,8 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color='#2bc381', placeholder="Tags", on_blur=DataEditorState_HP.set_Tags),
-                                rx.chakra.button(rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DataEditorState_HP.add_data,width='100%', bg="#ecfdf5", color="#047857", spacing="10"),
+                                    focus_border_color=normal_green, placeholder="Tags", on_blur=DataEditorState_HP.set_Tags),
+                                rx.chakra.button(rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DataEditorState_HP.add_data,width='100%', bg=dark_green, color=light_green, spacing="10"),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -614,22 +645,22 @@ def portal_true():
             ),
             rx.chakra.spacer(),
             rx.chakra.spacer(),
-            rx.chakra.divider(border_color="#2bc381"),
+            rx.chakra.divider(border_color=normal_green),
             rx.chakra.spacer(),
             rx.chakra.spacer(),
             rx.flex(
                 rx.chakra.button(rx.icon(tag="refresh-ccw", stroke_width=2.5), "Refresh Data",
-                                 on_click=DataEditorState_HP.refresh_data, bg="#d2eafc", color="#1a78c2", width="100%", spacing="10"),
-                rx.chakra.input(focus_border_color='#2bc381', placeholder="Delete",
+                                 on_click=DataEditorState_HP.refresh_data, bg="#0C4466", color="#D2EAFC", width="100%", spacing="10"),
+                rx.chakra.input(focus_border_color=normal_green, placeholder="Delete",
                                 on_blur=DataEditorState_HP.set_delete_id, width="100%"),
                 rx.chakra.button(rx.icon(tag="trash", stroke_width=2.5), "Delete",
-                                 on_click=DataEditorState_HP.delete_data, width="100%", bg="#fef2f2", color="#b91c1c", spacing="10"),
+                                 on_click=DataEditorState_HP.delete_data, width="100%", bg="#681212", color="#fef2f2", spacing="10"),
                 spacing='4',
                 direction='row'
             ),
             rx.chakra.spacer(),
             rx.chakra.spacer(),
-            rx.chakra.divider(border_color="#2bc381"),
+            rx.chakra.divider(border_color=normal_green),
             rx.hstack(
                 rx.data_editor(
                     columns=DataEditorState_HP.cols,
@@ -656,7 +687,7 @@ def portal_wrong():
         rx.chakra.vstack(
             navbar(),
             rx.heading("Enter Your Portal Pin",
-                       font_family="Azonix", color='#9ca3af'),
+                       font_family="Azonix", color=light_green),
             password_ui(),
             bottombar(),
         ),
