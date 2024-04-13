@@ -41,6 +41,7 @@ style = {
 
 }
 
+
 def connect_db():
     return pymysql.connect(
         host="sql.freedb.tech",
@@ -48,6 +49,8 @@ def connect_db():
         password="qz!5sxM!YFyaV7V",
         db="freedb_OsamaAbdElMohsenPortofolio",
     )
+
+
 conn = connect_db()
 ######################################################################
 #############################  Style & DB ###########################
@@ -56,10 +59,30 @@ conn = connect_db()
 ######################################################################
 ##############################  Classes  #############################
 ######################################################################
+
+
 class State(rx.State):
     """The app state."""
 
+
 class DataEditorState_HP(rx.State):
+
+    def Get_db_User_info():
+        sql = 'SELECT * FROM user_info LIMIT 1'
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute(sql)
+        data = list(cur.fetchall())
+        data = data[0]
+        cur.close()
+        return data
+
+    user_name: str = ''
+    password: str = ''
+    logo: str = ''
+    pio: str = ''
+    (x, user_name, password, logo, pio) = Get_db_User_info()
+
     cat: str = ' '
     Image_Path: str = ' '
     Header: str = ' '
@@ -112,6 +135,15 @@ class DataEditorState_HP(rx.State):
 
     data: list = refresh_dataB()
 
+    def update_user_info(self):
+        conn = connect_db()
+        cur = conn.cursor()
+        sql = "UPDATE user_info SET Username = %s ,password = %s ,logo_icon = %s ,pio = %s WHERE Id = 1"
+        value = (self.user_name, self.password, self.logo, self.pio)
+        cur.execute(sql, value)
+        conn.commit()
+        cur.close()
+
     def add_data(self):
         if self.cat != ' ' and self.Image_Path != ' ' and self.Header != ' ' and self.Description != ' ' and self.Tags != ' ':
             conn = connect_db()
@@ -132,10 +164,10 @@ class DataEditorState_HP(rx.State):
     def get_edited_data(self, pos, val) -> str:
         col, row = pos
         # self.data[row][col] = val["data"]
-        print("self.data[row][col] = ", self.data[row][col])
-        print(f"Id {self.data[row][0]} Edited")
-        print(f"current data =  {self.data[row][col]} ")
-        print("new value = ", val['data'])
+        # print("self.data[row][col] = ", self.data[row][col])
+        # print(f"Id {self.data[row][0]} Edited")
+        # print(f"current data =  {self.data[row][col]} ")
+        # print("new value = ", val['data'])
 
         conn = connect_db()
         cur = conn.cursor()
@@ -190,6 +222,7 @@ class DataEditorState_HP(rx.State):
             self.refresh_data()
         except:
             pass
+
 
 class CardSwitcherState(rx.State):
     current_card_index: int = 0
@@ -247,6 +280,7 @@ def navbar():
         z_index="500",
     )
 
+
 def bottombar():
     return rx.flex(
         rx.hstack(
@@ -280,6 +314,7 @@ def bottombar():
 ######################################################################
 ###############################  BARS  ###############################
 ######################################################################
+
 
 def skill(skillName, precentage, image):
     return rx.card(
@@ -322,6 +357,7 @@ def skill(skillName, precentage, image):
 def letter_heading(char):
     return rx.chakra.heading(char, font_size="2em", font_family="JetBrainsMono", color="#9ca3af")
 
+
 def Get_db_password():
     sql = 'SELECT password FROM user_info LIMIT 1'
     conn = connect_db()
@@ -356,6 +392,8 @@ def password_ui():
 ######################################################################
 ###############################  Pages  ##############################
 ######################################################################
+
+
 def index() -> rx.Component:
     return rx.chakra.center(
         rx.chakra.vstack(
@@ -459,6 +497,7 @@ def index() -> rx.Component:
         padding="5em"
     )
 
+
 def portal_true():
     return rx.chakra.center(
         rx.chakra.vstack(
@@ -468,36 +507,109 @@ def portal_true():
             rx.chakra.spacer(),
             rx.chakra.spacer(),
             rx.chakra.spacer(),
-            rx.vstack(
-                rx.card(
+            rx.hstack(
+                rx.flex(
                     rx.card(
-                        rx.flex(
-                            rx.chakra.input(
-                                focus_border_color='#2bc381', placeholder="Category", on_blur=DataEditorState_HP.set_cat),
-                            rx.chakra.input(
-                                focus_border_color='#2bc381', placeholder="Image_Path", on_blur=DataEditorState_HP.set_Image_Path),
-                            rx.chakra.input(
-                                focus_border_color='#2bc381', placeholder="Header", on_blur=DataEditorState_HP.set_Header),
-                            spacing='4',
-                            direction='row',
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.heading(
+                                    'Update User Info', color='#9ca3af'),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost'
+                        ),
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', placeholder='User Name', value=DataEditorState_HP.user_name, on_change=DataEditorState_HP.set_user_name),
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', type_="password", max_length="8", placeholder='Password', value=DataEditorState_HP.password, on_change=DataEditorState_HP.set_password),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost'
+                        ),
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.text_area(
+                                    focus_border_color='#2bc381', placeholder='pio', font_size="1em", width='100%', value=DataEditorState_HP.pio, on_change=DataEditorState_HP.set_pio),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost'
+                        ),
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', placeholder='Icon url', value=DataEditorState_HP.logo, on_change=DataEditorState_HP.set_logo),
+                                rx.chakra.button(rx.icon(tag="save", stroke_width=2.5), "Update",on_click=DataEditorState_HP.update_user_info, width='100%', bg="#ecfdf5", color="#047857", spacing="10"),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost'
                         ),
                         variant='ghost'
                     ),
-                    rx.card(
-                        rx.flex(
-                            rx.chakra.input(
-                                focus_border_color='#2bc381', placeholder="Description", on_blur=DataEditorState_HP.set_Description),
-                            rx.chakra.input(
-                                focus_border_color='#2bc381', placeholder="Tags", on_blur=DataEditorState_HP.set_Tags),
-                            rx.chakra.button(rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DataEditorState_HP.add_data,
-                                             width='100%', bg="#ecfdf5", color="#047857", spacing="10"),
-                            spacing='4',
-                            direction='row',
-                        ),
-                        variant='ghost'
+                    rx.chakra.spacer(),
+                    rx.chakra.spacer(),
+                    rx.chakra.spacer(),
+                    rx.chakra.center(
+                        rx.chakra.divider(border_color="#2bc381",orientation="vertical"),
+                        height="20em",
                     ),
-                    variant='ghost'
-                ),
+                    rx.chakra.spacer(),
+                    rx.chakra.spacer(),
+                    rx.chakra.spacer(),
+                            rx.card(
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.heading(
+                                    'Update Data ', color='#9ca3af'),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost'
+                        ),
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', placeholder="Category", on_blur=DataEditorState_HP.set_cat),
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', placeholder="Image_Path", on_blur=DataEditorState_HP.set_Image_Path),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost'
+                        ),
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', placeholder="Header", on_blur=DataEditorState_HP.set_Header),
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', placeholder="Description", on_blur=DataEditorState_HP.set_Description),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost',
+                        ),
+                        rx.card(
+                            rx.flex(
+                                rx.chakra.input(
+                                    focus_border_color='#2bc381', placeholder="Tags", on_blur=DataEditorState_HP.set_Tags),
+                                rx.chakra.button(rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DataEditorState_HP.add_data,width='100%', bg="#ecfdf5", color="#047857", spacing="10"),
+                                spacing='4',
+                                direction='row',
+                            ),
+                            variant='ghost',
+                        ),
+                        variant='ghost',
+                        direction='row',
+                    ),
+                    variant='ghost',
+                    spacing='4',
+                    direction='row',
+                )
             ),
             rx.chakra.spacer(),
             rx.chakra.spacer(),
@@ -542,7 +654,8 @@ def portal_wrong():
     return rx.chakra.center(
         rx.chakra.vstack(
             navbar(),
-            rx.heading("Enter Your Portal Pin",font_family="Azonix",color = '#9ca3af'),
+            rx.heading("Enter Your Portal Pin",
+                       font_family="Azonix", color='#9ca3af'),
             password_ui(),
             bottombar(),
         ),
@@ -560,10 +673,11 @@ def portal():
             ),
             rx.cond(
                 Portal_password.state == 0,
-                rx.heading("Wrong password", color='#b91c1c',font_family="Azonix",),
+                rx.heading("Wrong password", color='#b91c1c',
+                           font_family="Azonix",),
                 rx.heading(' '),
             ),
-            align = 'center'
+            align='center'
         )
     )
 ######################################################################
