@@ -5,7 +5,6 @@ from reflex.components.datadisplay.dataeditor import (
     DataEditorTheme,
 )
 
-
 ######################################################################
 #############################  Style & DB ###########################
 #####################################################################
@@ -69,7 +68,6 @@ conn = connect_db()
 
 class State(rx.State):
     """The app state."""
-
 
 class DataEditorState_HP(rx.State):
 
@@ -179,12 +177,6 @@ class DataEditorState_HP(rx.State):
 
     def get_edited_data(self, pos, val) -> str:
         col, row = pos
-        # self.data[row][col] = val["data"]
-        # print("self.data[row][col] = ", self.data[row][col])
-        # print(f"Id {self.data[row][0]} Edited")
-        # print(f"current data =  {self.data[row][col]} ")
-        # print("new value = ", val['data'])
-
         conn = connect_db()
         cur = conn.cursor()
         if col == 1:
@@ -215,10 +207,6 @@ class DataEditorState_HP(rx.State):
 
     def refresh_data(self):
         (self.x, self.user_name, self.password, self.logo, self.pio) = self.Get_db_User_info()
-        print('='*100)
-        print('user_info = ')
-        print((self.x, self.user_name, self.password, self.logo, self.pio))        
-        print('='*100)
         self.data = []
         conn = connect_db()
         cur = conn.cursor()
@@ -226,12 +214,6 @@ class DataEditorState_HP(rx.State):
         output = list(cur.fetchall())
         cur.close()
         self.data += output
-        print('='*100)
-        print('self.data = ')
-        print(self.data)
-        print('='*100)
-        print('output = ')
-        print(output)
 
     def set_delete_id(self, text: str):
         try:
@@ -424,7 +406,6 @@ def password_ui():
 
 
 def index() -> rx.Component:
-    DataEditorState_HP.refresh_data()
     return rx.chakra.center(
         rx.chakra.vstack(
             navbar(),
@@ -529,7 +510,6 @@ def index() -> rx.Component:
 
 
 def portal_true():
-    DataEditorState_HP.refresh_data()
     return rx.chakra.center(
         rx.chakra.vstack(
             navbar(),
@@ -734,8 +714,8 @@ app = rx.App(
         radius="large",
     )
 )
-app.add_page(index)
-app.add_page(portal, route="/portal")
+app.add_page(index,on_load=DataEditorState_HP.refresh_data)
+app.add_page(portal, route="/portal",on_load=DataEditorState_HP.refresh_data)
 ######################################################################
 ###############################   App   ##############################
 ######################################################################
