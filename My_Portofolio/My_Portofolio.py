@@ -103,7 +103,7 @@ class DataEditorState_HP(rx.State):
             "type": "str",
         },
         {
-            "title": "Image_Path",
+            "title": "Image_Url",
             "type": "str",
             "width": 350,
         },
@@ -513,7 +513,7 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.heading(
-                                    'Update User Info', color='#9ca3af'),
+                                    'Update User Info', color='#9ca3af',font_family="Azonix",),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -557,6 +557,7 @@ def portal_true():
                     rx.chakra.center(
                         rx.chakra.divider(border_color="#2bc381",orientation="vertical"),
                         height="20em",
+                        align = 'center'
                     ),
                     rx.chakra.spacer(),
                     rx.chakra.spacer(),
@@ -565,7 +566,7 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.heading(
-                                    'Update Data ', color='#9ca3af'),
+                                    'Update Data ', color='#9ca3af',font_family="Azonix"),
                                 spacing='4',
                                 direction='row',
                             ),
