@@ -56,6 +56,7 @@ def connect_db():
     )
 
 
+number_of_data = 0
 conn = connect_db()
 ######################################################################
 #############################  Style & DB ###########################
@@ -68,6 +69,19 @@ conn = connect_db()
 
 class State(rx.State):
     """The app state."""
+
+
+class CardSwitcherState(rx.State):
+    current_card_index: int = 0
+
+    def next_card(self):
+        if self.current_card_index < number_of_data - 1:
+            self.current_card_index += 1
+
+    def previous_card(self):
+        if self.current_card_index > 0:
+            self.current_card_index -= 1
+
 
 class DataEditorState_HP(rx.State):
 
@@ -100,7 +114,13 @@ class DataEditorState_HP(rx.State):
     newdata: int = 2
     delete_id: int
 
-    clicked_data: str = "Cell clicked: "
+    id = []
+    category = []
+    headers = []
+    progr = []
+    image_path = []
+    desc = []
+    tags: list[list] = [[""]]
 
     cols: list[str] = [
         {"title": "Id",
@@ -163,8 +183,9 @@ class DataEditorState_HP(rx.State):
             conn = connect_db()
             cur = conn.cursor()
             sql = "INSERT INTO data (Category, Image_Path, Header, Description, Tags) VALUES (%s, %s, %s, %s, %s)"
-            value = (self.cat, self.Image_Path, self.Header,
-                    self.Description, self.Tags)
+            value = (
+                self.cat, self.Image_Path, self.Header,
+                self.Description, self.Tags)
             cur.execute(sql, value)
             conn.commit()
             cur.close()
@@ -206,7 +227,8 @@ class DataEditorState_HP(rx.State):
             self.refresh_data()
 
     def refresh_data(self):
-        (self.x, self.user_name, self.password, self.logo, self.pio) = self.Get_db_User_info()
+        (self.x, self.user_name, self.password,
+         self.logo, self.pio) = self.Get_db_User_info()
         self.data = []
         conn = connect_db()
         cur = conn.cursor()
@@ -214,6 +236,28 @@ class DataEditorState_HP(rx.State):
         output = list(cur.fetchall())
         cur.close()
         self.data += output
+        self.split_data(self.data)
+
+    def split_data(self, data):
+        global number_of_data
+        self.id = []
+        self.category = []
+        self.image_path = []
+        self.headers = []
+        self.desc = []
+        self.tags = []
+
+        for card in data:
+            self.id.append(card[0])
+            self.category.append(card[1])
+            self.image_path.append(card[2])
+            self.headers.append(card[3])
+            self.desc.append(card[4])
+            self.tags.append(card[5])
+
+        for index, tag in enumerate(self.tags):
+            self.tags[index] = tag.split(',')
+        number_of_data = len(self.id)
 
     def set_delete_id(self, text: str):
         try:
@@ -231,21 +275,6 @@ class DataEditorState_HP(rx.State):
             self.refresh_data()
         except:
             pass
-
-
-class CardSwitcherState(rx.State):
-    current_card_index: int = 0
-    names = ["Python", "C", "HTML"]
-    progr = ['100', '20', '30']
-    image = ['/Netflix_Dashboard_tableau.png', '/01.png', '/02.png']
-
-    def next_card(self):
-        if self.current_card_index < len(self.names) - 1:
-            self.current_card_index += 1
-
-    def previous_card(self):
-        if self.current_card_index > 0:
-            self.current_card_index -= 1
 
 
 class Portal_password(rx.State):
@@ -290,25 +319,49 @@ def navbar():
         z_index="500",
     )
 
+
 def bottombar():
     return rx.flex(
-        rx.hstack(
-            rx.text(
-                "© 2024 Developed and Designed With 💖 by : ".upper(),
-                size='5',
-                font_family="Vobca-Black",
-                color=light_green,
+        rx.desktop_only(
+            rx.center(
+                rx.hstack(
+                    rx.text(
+                        "© 2024 Developed and Designed With 💖 by : ".upper(),
+                        font_size=["1em", '1.3em'],
+                        font_family="Vobca-Black",
+                        color=light_green,
+                    ),
+                    rx.text(
+                        "Osama Abd El Mohsen".upper(),
+                        font_size=["1em", '1.3em'],
+                        font_family="Vobca-Black",
+                        color=normal_green,
+                    ),
+                ),
+                align='center'
             ),
-            rx.text(
-                "Osama Abd El Mohsen".upper(),
-                size='5',
-                font_family="Vobca-Black",
-                color=normal_green,
+        ),
+        rx.mobile_and_tablet(
+            rx.chakra.responsive_grid(
+                rx.text(
+                    "© 2024 Developed and Designed With 💖 by  ".upper(),
+                    font_size=["1em", '1.3em'],
+                    font_family="Vobca-Black",
+                    color=light_green,
+                    align='center'
+                ),
+                rx.text(
+                    "Osama Abd El Mohsen".upper(),
+                    font_size=["1em", '1.3em'],
+                    font_family="Vobca-Black",
+                    color=normal_green,
+                    align='center'
+                ),
             ),
-            align="center",
-            justify="center",
+            columns=[1],
             padding="2px",
         ),
+        direction='row',
         align="center",
         justify="center",
         position="fixed",
@@ -325,38 +378,116 @@ def bottombar():
 ######################################################################
 
 
-def skill(skillName, precentage, image):
+def skill(header, Description, image_url, tags):
     return rx.card(
-        rx.inset(
-            rx.center(
-                rx.image(
-                    src=image,
-                    width="auto",
-                    height="500px",
+        rx.flex(
+            rx.inset(
+                rx.center(
+                    rx.image(
+                        src=image_url,
+                        width="auto",
+                        height="auto",
+                    ),
+                ),
+                side="top",
+                pb="current",
+                clip='border-box',
+                background_color="rgba(36, 36, 36, 1)",
+            ),
+            rx.heading(
+                header
+            ),
+            rx.spacer(),
+            rx.heading(
+                Description
+            ),
+            rx.spacer(),
+            rx.heading(
+                tags
+            ),
+            rx.spacer(),
+            rx.spacer(),
+            direction="column",),
+        spacing='10',
+    )
+
+
+def bages(char):
+    return rx.badge(
+        char,  font_family="Vobca-Black",
+        font_size=['.2em', '.8em'],
+        variant="soft",
+        animation="fadeIn 2s"
+    )
+
+
+def skill2(header, Description, image_url, tags):
+    return rx.center(
+        rx.hstack(
+            rx.desktop_only(
+                rx.chakra.responsive_grid(
+                    rx.card(
+                        rx.text(
+                            header, font_size=["1em", "1.5em", "2em"], font_family="Hackonedash",
+                            color=light_green, text_shadow=f"0 0 5px {normal_green}"),
+
+                        rx.text(
+                            Description, font_size=['.4em', ".8em"], font_family="HexaframeCF-Regular",
+                            color=light_green),
+                        rx.flex(
+                            rx.foreach(tags, bages),
+                            rx.spacer(orientation="horizontal"),
+                            orientation="horizontal",
+                            spacing='2'
+                        ),
+                        spacing="4",
+                        variant='ghost',
+                        
+                    ),
+
+                    rx.flex(
+                        rx.image(
+                            src=image_url, width=["500px", '1000px'], height=["250px", '500px'],
+                            border_radius="25px 25px", border="5px solid #212121"),
+                        width="100%",
+                        height="100%"
+                    ),
+                    spacing="2",
+                    columns=[1, 2]
                 ),
             ),
-            side="top",
-            pb="current",
-            background_color="rgba(36, 36, 36, 1)",
-        ),
-        rx.heading(
-            "Reflex is a web framework that allows developers to build their app in pure Python."
-        ),
-        rx.divider(),
-        rx.heading(
-            "Reflex is a web framework that allows developers to build their app in pure Python."
-        ),
-        rx.divider(),
-        rx.heading(
-            f"Skill name = {skillName}"
-        ),
-        rx.divider(),
-        rx.progress(
-            value=int(precentage),
-            max=100
-        ),
-        rx.divider(),
-        spacing='10',
+            rx.mobile_and_tablet(
+                rx.chakra.responsive_grid(
+                    rx.flex(
+                        rx.image(
+                            src=image_url, width=["100%", "100%", "1000px"],
+                            height=["auto", "auto", 'auto'],
+                            border_radius="25px 25px", border="5px solid #212121"),
+                        width="100%",
+                        height="100%"
+                    ),
+
+                    rx.card(
+                        rx.text(
+                            header, font_size=["1em", "1.5em", "2em"], font_family="Hackonedash",
+                            color=light_green, text_shadow=f"0 0 5px {normal_green}"),
+                        rx.text(
+                            Description, font_size=['.4em', ".8em"], font_family="HexaframeCF-Regular",
+                            color=light_green),
+                        rx.flex(
+                            rx.foreach(tags, bages),
+                            rx.spacer(orientation="horizontal"),
+                            orientation="horizontal",
+                            spacing='2'
+                        ),
+                        spacing="4",
+                    ),
+                    spacing="2",
+                    columns=[1]
+                ),
+            ),
+        )
+
     )
 
 
@@ -365,8 +496,9 @@ def skill(skillName, precentage, image):
 ######################################################################
 def letter_heading(char):
     return rx.center(
-        rx.chakra.text(char, font_size="2em", font_family="Hackonedash", color=light_green,text_shadow=f"0 0 5px {normal_green}"),
-        )
+        rx.chakra.text(char, font_size="2em", font_family="Hackonedash",
+                       color=light_green, text_shadow=f"0 0 5px {normal_green}"),
+    )
 
 
 def Get_db_password():
@@ -405,6 +537,66 @@ def password_ui():
 ######################################################################
 
 
+code_text_desktop = """
+var TxtType = function(el, toRotate, period) {
+        this.toRotate = toRotate;
+        this.el = el;
+        this.loopNum = 0;
+        this.period = parseInt(period, 10) || 2000;
+        this.txt = '';
+        this.tick();
+        this.isDeleting = false;
+    };
+
+    TxtType.prototype.tick = function() {
+        var i = this.loopNum % this.toRotate.length;
+        var fullTxt = this.toRotate[i];
+
+        if (this.isDeleting) {
+        this.txt = fullTxt.substring(0, this.txt.length - 1);
+        } else {
+        this.txt = fullTxt.substring(0, this.txt.length + 1);
+        }
+
+        this.el.innerHTML = '<span class="wrap">'+this.txt+'</span>';
+
+        var that = this;
+        var delta = 200 - Math.random() * 100;
+
+        if (this.isDeleting) { delta /= 2; }
+
+        if (!this.isDeleting && this.txt === fullTxt) {
+        delta = this.period;
+        this.isDeleting = true;
+        } else if (this.isDeleting && this.txt === '') {
+        this.isDeleting = false;
+        this.loopNum++;
+        delta = 500;
+        }
+
+        setTimeout(function() {
+        that.tick();
+        }, delta);
+    };
+
+    window.onload = function() {
+        var elements = document.getElementsByClassName('typewrite');
+        for (var i=0; i<elements.length; i++) {
+            var toRotate = elements[i].getAttribute('data-type');
+            var period = elements[i].getAttribute('data-period');
+            if (toRotate) {
+              new TxtType(elements[i], JSON.parse(toRotate), period);
+            }
+        }
+        // INJECT CSS
+        var css = document.createElement("style");
+        css.type = "text/css";
+        css.innerHTML = ".typewrite > .wrap { border-right: 0.1em solid #2BC381 ;font-size: 1.5em  ;color: #ECFDF5;font-family: 'Vobca-Black', sans-serif;}";
+        document.body.appendChild(css);
+    };
+"""
+
+
 def index() -> rx.Component:
     return rx.chakra.center(
         rx.chakra.vstack(
@@ -419,90 +611,78 @@ def index() -> rx.Component:
                         'print("Hello ...  Iam Osama Abd EL Mohsen From Egypt a final year undergraduatefrom Mansoura University")',
                         language="python",
                         show_line_numbers=False,
-                        wrap_long_lines=True,),  size='5'
+                        wrap_long_lines=True,),  size='5',
+                        width = '100%'
                 ),
-                rx.chakra.card(
-                    rx.hstack(
-                        rx.flex(
+                rx.card(
+                    rx.vstack(
+                        rx.chakra.responsive_grid(
                             rx.flex(
-                                rx.foreach(list('Data'.upper()), letter_heading),
-                                direction="column",
-                                size="3xl"
+                                rx.vstack(
+                                    # rx.chakra.text(
+                                    #     "Data Analysis", font_size=["1em", "1.5em", "2em", "2.5em", "3em"], font_family="Hackonedash",
+                                    #     color="light_green", text_shadow=f"0 0 5px {normal_green}", class_name="css-typing", as_='p'),
+                                    rx.script(code_text_desktop),
+                                    rx.html('''<h1>
+                                                <a href="" class="typewrite" data-period="2000"
+                                                    data-type='["Hello World !", "Data Analysis" ]'>
+                                                    <span class="wrap"></span>
+                                                </a>
+                                            </h1>'''),
+                                ),
                             ),
-                            rx.flex(
-                                rx.foreach(list('Analysis'.upper()), letter_heading),
-                                direction="column",
-                                size="3xl"
-                            ),
-                            spacing="3",
-                            direction="row",
-                            width='10%',
+                            rx.hstack(
+                                rx.icon(
+                                    tag="chevron-left",
+                                    size=70,
+                                    on_click=CardSwitcherState.previous_card,
+                                    _hover={"color": "var(--green-11)"},
+                                    _active={
+                                        "color": "var(--green-9)"},
+                                    width=['10%', '5%']
+                                ),
+                                rx.card(
+                                    rx.hstack(
+                                        skill2(
+                                            DataEditorState_HP.headers[CardSwitcherState.current_card_index], DataEditorState_HP.desc[CardSwitcherState.current_card_index], DataEditorState_HP.image_path[CardSwitcherState.current_card_index], DataEditorState_HP.tags[CardSwitcherState.current_card_index]),
+                                        align="center",
+                                        spacing='3',
+                                    ),
+                                    align="center",
+                                    variant='ghost',
 
-                        ),
-                        rx.flex(
-                            rx.icon(
-                                tag="chevron-left",
-                                size=90,
-                                on_click=CardSwitcherState.previous_card,
-                                _hover={"color": "var(--green-11)"},
-                                _active={
-                                    "color": "var(--green-9)"},
-                            ),
-                            skill(
-                                CardSwitcherState.names[CardSwitcherState.current_card_index], '50', CardSwitcherState.image[CardSwitcherState.current_card_index]),
-                            rx.icon(
-                                tag="chevron-right",
-                                size=90,
-                                on_click=CardSwitcherState.next_card,
-                                _hover={"color": "var(--green-11)"},
-                                _active={
-                                    "color": "var(--green-9)"},
-                            ),
-                            align="center",
-                            spacing='3',
-                        ),
-                    ),
-                    font_size="2em",
-                    font_family="MyFont",
-                ),
-                rx.chakra.card(
-                    rx.hstack(
-                        rx.flex(
-                            rx.icon(
-                                tag="chevron-left",
-                                size=90,
-                                on_click=CardSwitcherState.previous_card,
-                                _hover={"color": "var(--green-11)"},
-                                _active={
-                                    "color": "var(--green-9)"},
-                            ),
-                            skill(
-                                CardSwitcherState.names[CardSwitcherState.current_card_index], '50', CardSwitcherState.image[CardSwitcherState.current_card_index]),
-                            rx.icon(
-                                tag="chevron-right",
-                                size=90,
-                                on_click=CardSwitcherState.next_card,
-                                _hover={"color": "var(--green-11)"},
-                                _active={
-                                    "color": "var(--green-9)"},
-                            ),
-                            align="center",
-                            spacing='3',
-                        ),
-                        rx.flex(
-                            rx.foreach(list('Python'.upper()), letter_heading),
-                            direction="column",
-                            spacing="3",
-                            width='10%',
-                            size="3xl",
+                                    spacing="3",
+                                    direction="column",
+                                    width=['80%', '90%']
 
+                                ),
+                                rx.icon(
+                                    tag="chevron-right",
+                                    size=70,
+                                    on_click=CardSwitcherState.next_card,
+                                    _hover={"color": "var(--green-11)"},
+                                    _active={
+                                        "color": "var(--green-9)"},
+                                    width=['10%', '5%']
+
+                                ),
+                                align='center'
+                            ),
+                            columns=[1]
                         ),
+                        font_size="2em",
+                        font_family="MyFont",
+
                     ),
-                    font_size="2em",
+                    width=['100%', '100%'],
+                    variant='ghost',
+                    class_name = "glass-card",
+                    align = 'center'
                 ),
-                variant='ghost',
                 spacing="3",
                 direction="column",
+                align='center',
+                width=['150%', '100%']
             ),
         ),
         padding="5em"
@@ -524,7 +704,7 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.text(
-                                    'Update User Info'.upper(), color=normal_green,font_family="Hackonedash",font_size='3em'),
+                                    'Update User Info'.upper(), color=normal_green, font_family="Hackonedash", font_size='3em'),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -554,7 +734,8 @@ def portal_true():
                             rx.flex(
                                 rx.chakra.input(
                                     focus_border_color=normal_green, placeholder='Icon url', value=DataEditorState_HP.logo, on_change=DataEditorState_HP.set_logotemp),
-                                rx.chakra.button(rx.icon(tag="save", stroke_width=2.5), "Update",on_click=DataEditorState_HP.update_user_info, width='100%', bg=dark_green, color=light_green, spacing="10"),
+                                rx.chakra.button(rx.icon(tag="save", stroke_width=2.5), "Update", on_click=DataEditorState_HP.update_user_info,
+                                                 width='100%', bg=dark_green, color=light_green, spacing="10"),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -566,18 +747,19 @@ def portal_true():
                     rx.chakra.spacer(),
                     rx.chakra.spacer(),
                     rx.chakra.center(
-                        rx.chakra.divider(border_color=normal_green,orientation="vertical"),
+                        rx.chakra.divider(
+                            border_color=normal_green, orientation="vertical"),
                         height="20em",
-                        align = 'center'
+                        align='center'
                     ),
                     rx.chakra.spacer(),
                     rx.chakra.spacer(),
                     rx.chakra.spacer(),
-                            rx.card(
+                    rx.card(
                         rx.card(
                             rx.flex(
                                 rx.chakra.text(
-                                    'Update Data '.upper(), color=normal_green,font_family="Hackonedash",font_size='3em'),
+                                    'Update Data '.upper(), color=normal_green, font_family="Hackonedash", font_size='3em'),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -609,7 +791,8 @@ def portal_true():
                             rx.flex(
                                 rx.chakra.input(
                                     focus_border_color=normal_green, placeholder="Tags", on_blur=DataEditorState_HP.set_Tags),
-                                rx.chakra.button(rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DataEditorState_HP.add_data,width='100%', bg=dark_green, color=light_green, spacing="10"),
+                                rx.chakra.button(rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DataEditorState_HP.add_data,
+                                                 width='100%', bg=dark_green, color=light_green, spacing="10"),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -704,6 +887,7 @@ app = rx.App(
     style=style,
     stylesheets=[
         "/fonts/myfont.css",
+        "/styles.css",
     ],
     theme=rx.theme(
         appearance="dark",
@@ -714,8 +898,8 @@ app = rx.App(
         radius="large",
     )
 )
-app.add_page(index,on_load=DataEditorState_HP.refresh_data)
-app.add_page(portal, route="/portal",on_load=DataEditorState_HP.refresh_data)
+app.add_page(index, on_load=DataEditorState_HP.refresh_data)
+app.add_page(portal, route="/portal", on_load=DataEditorState_HP.refresh_data)
 ######################################################################
 ###############################   App   ##############################
 ######################################################################
