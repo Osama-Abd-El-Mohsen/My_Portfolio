@@ -6,8 +6,8 @@ from reflex.components.datadisplay.dataeditor import (
 )
 
 ######################################################################
-#############################  Style & DB ###########################
-#####################################################################
+#########################  Style & DB Connect ########################
+######################################################################
 
 light_green = '#ECFDF5'
 normal_green = '#2BC381'
@@ -57,53 +57,26 @@ def connect_db():
 
 
 number_of_data = 0
-selected_category = ''
 unique_category_list = []
-elements_in_selected_category = 0
-elements_in_selected_category_ids = []
-elements_in_selected_category_image_path = []
-elements_in_selected_category_header = []
-elements_in_selected_category_description = []
-elements_in_selected_category_tags = []
+
 current_card_index = 0
 conn = connect_db()
 ######################################################################
-#############################  Style & DB ###########################
-#####################################################################
+#############################  Style & DB ############################
+######################################################################
 
 ######################################################################
 ##############################  Classes  #############################
 ######################################################################
 
-
 class State(rx.State):
     """The app state."""
 
-
-class CardSwitcherState(rx.State):
+class DatabaseState(rx.State):
+    selected_category: str 
+    unique_category_list = []
     current_card_index : int = 0
-
-    def next_card(self):
-        if self.current_card_index < elements_in_selected_category - 1:
-            self.current_card_index += 1
-
-    def previous_card(self):
-        if self.current_card_index > 0:
-            self.current_card_index -= 1
-
-
-class DataEditorState_HP(rx.State):
-
-    def Get_db_User_info(*args):
-        sql = 'SELECT * FROM user_info LIMIT 1'
-        conn = connect_db()
-        cur = conn.cursor()
-        cur.execute(sql)
-        data = list(cur.fetchall())
-        data = data[0]
-        cur.close()
-        return data
-
+    data: list 
     user_name: str = ''
     password: str = ''
     logo: str = ''
@@ -112,9 +85,6 @@ class DataEditorState_HP(rx.State):
     passwordtemp: str = ''
     logotemp: str = ''
     piotemp: str = ''
-    (x, user_name, password, logo, pio) = Get_db_User_info()
-    (x, user_nametemp, passwordtemp, logotemp, piotemp) = Get_db_User_info()
-
     cat: str = ' '
     Image_Path: str = ' '
     Header: str = ' '
@@ -164,18 +134,31 @@ class DataEditorState_HP(rx.State):
         },
     ]
 
-    def refresh_dataB():
-        data = []
+    ##############################  Card  #############################
+    def next_card(self):
+        if self.current_card_index < self.elements_in_selected_category - 1:
+            self.current_card_index += 1
+
+    def previous_card(self):
+        if self.current_card_index > 0:
+            self.current_card_index -= 1
+    ##############################  Card  #############################
+
+    ###########################  User info  ###########################
+    def Get_db_User_info(*args):
+        sql = 'SELECT * FROM user_info LIMIT 1'
         conn = connect_db()
         cur = conn.cursor()
-        cur.execute("select * from data")
-        output = list(cur.fetchall())
+        cur.execute(sql)
+        data = list(cur.fetchall())
+        data = data[0]
         cur.close()
-        data += output
         return data
 
-    data: list = refresh_dataB()
+    (x, user_name, password, logo, pio) = Get_db_User_info()
+    (x, user_nametemp, passwordtemp, logotemp, piotemp) = Get_db_User_info()
 
+    
     def update_user_info(self):
         self.user_name = self.user_nametemp
         self.password = self.passwordtemp
@@ -189,7 +172,9 @@ class DataEditorState_HP(rx.State):
         conn.commit()
         cur.close()
         self.refresh_data()
-
+    ###########################  User info  ###########################
+    
+    #################  Add Skill & Skills tabel edit  #################
     def add_data(self):
         if self.cat != ' ' and self.Image_Path != ' ' and self.Header != ' ' and self.Description != ' ' and self.Tags != ' ':
             conn = connect_db()
@@ -237,10 +222,29 @@ class DataEditorState_HP(rx.State):
             conn.commit()
             cur.close()
             self.refresh_data()
+    
+    def set_delete_id(self, text: str):
+        try:
+            self.delete_id = int(text)
+        except:
+            pass
+    
+    def delete_data(self):
+        try:
+            conn = connect_db()
+            cur = conn.cursor()
+            cur.execute(f"DELETE FROM data WHERE Id = {self.delete_id}")
+            conn.commit()
+            cur.close()
+            self.refresh_data()
+        except:
+            pass
+    #################  Add Skill & Skills tabel edit  #################
 
+    ##########################  Refresh Data  #########################
     def refresh_data(self):
-        refresh_unique_cat()
-        get_current_cat_data()
+        self.get_unique_cat()
+        self.get_current_cat_data()
         (
             self.x, self.user_name, self.password,
             self.logo, self.pio) = self.Get_db_User_info()
@@ -273,23 +277,58 @@ class DataEditorState_HP(rx.State):
         for index, tag in enumerate(self.tags):
             self.tags[index] = tag.split(',')
         number_of_data = len(self.id)
+    ##########################  Refresh Data  #########################
 
-    def set_delete_id(self, text: str):
-        try:
-            self.delete_id = int(text)
-        except:
-            pass
+    ###########################  Category  ############################
+    def select_category(self, category):
+        self.selected_category = category
+        self.get_current_cat_data()
+        self.current_card_index = 0
+    
+    def get_unique_cat(self):
+        self.unique_category_list = []
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT Category FROM data")
+        output = list(cur.fetchall())
+        cur.close()
+        for category in output:
+            category = str(category)
+            self.unique_category_list.append(
+                category[category.index("'")+1:category.index(",")-1])
+        self.selected_category = self.unique_category_list[0]
 
-    def delete_data(self):
-        try:
-            conn = connect_db()
-            cur = conn.cursor()
-            cur.execute(f"DELETE FROM data WHERE Id = {self.delete_id}")
-            conn.commit()
-            cur.close()
-            self.refresh_data()
-        except:
-            pass
+    def get_current_cat_data(self):
+        conn = connect_db()
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM data WHERE Category = '{self.selected_category}'")
+        output = list(cur.fetchall())
+        cur.close()
+        self.elements_in_selected_category = len(output)
+
+        self.headers = [] 
+        self.desc = [] 
+        self.image_path = [] 
+        self.tags = [] 
+
+        for element in output:
+            self.id.append(element[0])
+            self.image_path.append(element[2])
+            self.headers.append(element[3])
+            self.desc.append(element[4])
+            self.tags.append(element[5].split(','))
+
+        # print("="*50)
+        # print("From get_current_cat_data")
+        # print("="*50)
+        # print("selected category = ", self.selected_category)
+        # print("elements of selected category = ", self.elements_in_selected_category)
+        # print("DatabaseState.headers", self.headers)
+        # print("self.desc", self.desc)
+        # print("self.image_path", self.image_path)
+        # print("self.tags", self.tags)
+        # print("="*50)
+    ###########################  Category  ############################
 
 
 class Portal_password(rx.State):
@@ -318,8 +357,8 @@ def navbar():
     return rx.chakra.box(
         rx.chakra.hstack(
             rx.chakra.hstack(
-                rx.chakra.image(src=DataEditorState_HP.logo, width="50px"),
-                rx.heading(DataEditorState_HP.user_name),
+                rx.chakra.image(src=DatabaseState.logo, width="50px"),
+                rx.heading(DatabaseState.user_name),
             ),
             justify="space-between",
             padding_x="2em",
@@ -436,65 +475,6 @@ def bages(char):
     )
 
 
-# [(118, 'Web', '/01.png', 'Driver Maker Script', 'description', 'tag0,tag1,tag2'), (137, 'Web', 'asd', 'asd', 'asd', 'asd')]
-def get_current_cat_data():
-    global elements_in_selected_category, elements_in_selected_category_ids, elements_in_selected_category_image_path, elements_in_selected_category_header, elements_in_selected_category_description, elements_in_selected_category_tags
-    elements_in_selected_category_description = []
-    elements_in_selected_category_ids = []
-    elements_in_selected_category_image_path = []
-    elements_in_selected_category_header = []
-    elements_in_selected_category_tags = []
-
-    conn = connect_db()
-    cur = conn.cursor()
-    cur.execute(f"SELECT * FROM data WHERE Category = '{selected_category}'")
-    output = list(cur.fetchall())
-    cur.close()
-    elements_in_selected_category = len(output)
-    
-
-
-    for element in output:
-        elements_in_selected_category_ids.append(element[0])
-        elements_in_selected_category_image_path.append(element[2])
-        elements_in_selected_category_header.append(element[3])
-        elements_in_selected_category_description.append(element[4])
-        elements_in_selected_category_tags.append(element[5].split(','))
-
-    DataEditorState_HP.headers = [] 
-    DataEditorState_HP.desc = [] 
-    DataEditorState_HP.image_path = [] 
-    DataEditorState_HP.tags = [] 
-
-    DataEditorState_HP.headers = elements_in_selected_category_header
-    DataEditorState_HP.desc = elements_in_selected_category_description
-    DataEditorState_HP.image_path = elements_in_selected_category_image_path
-    DataEditorState_HP.tags = elements_in_selected_category_tags
-
-    print("="*50)
-    print("From get_current_cat_data")
-    print("="*50)
-    print("selected category = ", selected_category)
-    print("elements of selected category = ", elements_in_selected_category)
-    print("DataEditorState_HP.headers", DataEditorState_HP.headers)
-    print("DataEditorState_HP.desc", DataEditorState_HP.desc)
-    print("DataEditorState_HP.image_path", DataEditorState_HP.image_path)
-    print("DataEditorState_HP.tags", DataEditorState_HP.tags)
-    print("="*50)
-
-    # print("="*50)
-    # print(elements_in_selected_category_ids)
-    # print("="*50)
-    # print(elements_in_selected_category_image_path)
-    # print("="*50)
-    # print(elements_in_selected_category_header)
-    # print("="*50)
-    # print(elements_in_selected_category_description)
-    # print("="*50)
-    # print(elements_in_selected_category_tags)
-    # print("="*50)
-
-
 def skill2(header, Description, image_url, tags):
     return rx.center(
         rx.hstack(
@@ -566,7 +546,7 @@ def skill2(header, Description, image_url, tags):
 
 
 ######################################################################
-############################  Helper Func  ###########################
+######################  Helper Funcs & Password  #####################
 ######################################################################
 def letter_heading(char):
     return rx.center(
@@ -604,22 +584,9 @@ def password_ui():
     )
 
 
-def refresh_unique_cat():
-    global selected_category, unique_category_list
-    conn = connect_db()
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT Category FROM data")
-    output = list(cur.fetchall())
-    cur.close()
-    for category in output:
-        category = str(category)
-        unique_category_list.append(
-            category[category.index("'")+1:category.index(",")-1])
-    selected_category = unique_category_list[0]
-
 
 ######################################################################
-############################  Helper Func  ###########################
+######################  Helper Funcs & Password  #####################
 ######################################################################
 
 ######################################################################
@@ -686,25 +653,14 @@ var TxtType = function(el, toRotate, period) {
 """
 
 
-class CategoryState(rx.State):
-    refresh_unique_cat()
-    selected_category: str = selected_category
-
-    def select_category(self, category):
-        global selected_category
-        self.selected_category = category
-        selected_category = category
-        get_current_cat_data()
-
-
 def add_buttons_group(button_label):
     return rx.chakra.button(
         button_label,
-        on_click=lambda: CategoryState.select_category(button_label),
+        on_click=lambda: DatabaseState.select_category(button_label),
         font_size=["1em", "1.5em"],
 
         color_scheme=rx.cond(
-            CategoryState.selected_category == button_label,
+            DatabaseState.selected_category == button_label,
             "green",
             "gray"))
 
@@ -728,13 +684,16 @@ def index() -> rx.Component:
                 ),
                 rx.card(
                     rx.chakra.responsive_grid(
-                        rx.chakra.button_group(
-                            rx.foreach(
-                                unique_category_list,
-                                add_buttons_group),
-                            is_attached=True,
-                            variant='solid',
-                            size="md",
+                        rx.scroll_area(
+                            rx.chakra.button_group(
+                                rx.foreach(
+                                    DatabaseState.unique_category_list,
+                                    add_buttons_group),
+                                is_attached=True,
+                                variant='solid',
+                                size="md",
+                            ),
+                            direction="row",
                         ),
                         columns=[1],
                     ),
@@ -764,7 +723,7 @@ def index() -> rx.Component:
                                 rx.icon(
                                     tag="chevron-left",
                                     size=70,
-                                    on_click=CardSwitcherState.previous_card,
+                                    on_click=DatabaseState.previous_card,
                                     _hover={"color": "var(--green-11)"},
                                     _active={
                                         "color": "var(--green-9)"},
@@ -773,10 +732,10 @@ def index() -> rx.Component:
                                 rx.card(
                                     rx.hstack(
                                         skill2(
-                                            DataEditorState_HP.headers[CardSwitcherState.current_card_index],
-                                            DataEditorState_HP.desc[CardSwitcherState.current_card_index],
-                                            DataEditorState_HP.image_path[CardSwitcherState.current_card_index],
-                                            DataEditorState_HP.tags[CardSwitcherState.current_card_index]),
+                                            DatabaseState.headers[DatabaseState.current_card_index],
+                                            DatabaseState.desc[DatabaseState.current_card_index],
+                                            DatabaseState.image_path[DatabaseState.current_card_index],
+                                            DatabaseState.tags[DatabaseState.current_card_index]),
                                         align="center",
                                         spacing='3',
                                     ),
@@ -791,7 +750,7 @@ def index() -> rx.Component:
                                 rx.icon(
                                     tag="chevron-right",
                                     size=70,
-                                    on_click=CardSwitcherState.next_card,
+                                    on_click=DatabaseState.next_card,
                                     _hover={"color": "var(--green-11)"},
                                     _active={
                                         "color": "var(--green-9)"},
@@ -845,9 +804,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder='User Name', value=DataEditorState_HP.user_name, on_change=DataEditorState_HP.set_user_nametemp),
+                                    focus_border_color=normal_green, placeholder='User Name', value=DatabaseState.user_name, on_change=DatabaseState.set_user_nametemp),
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, type_="password", max_length="8", placeholder='Password', value=DataEditorState_HP.password, on_change=DataEditorState_HP.set_passwordtemp),
+                                    focus_border_color=normal_green, type_="password", max_length="8", placeholder='Password', value=DatabaseState.password, on_change=DatabaseState.set_passwordtemp),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -856,7 +815,7 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.text_area(
-                                    focus_border_color=normal_green, placeholder='pio', font_size="1em", width='100%', value=DataEditorState_HP.pio, on_change=DataEditorState_HP.set_piotemp),
+                                    focus_border_color=normal_green, placeholder='pio', font_size="1em", width='100%', value=DatabaseState.pio, on_change=DatabaseState.set_piotemp),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -865,9 +824,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder='Icon url', value=DataEditorState_HP.logo, on_change=DataEditorState_HP.set_logotemp),
+                                    focus_border_color=normal_green, placeholder='Icon url', value=DatabaseState.logo, on_change=DatabaseState.set_logotemp),
                                 rx.chakra.button(
-                                    rx.icon(tag="save", stroke_width=2.5), "Update", on_click=DataEditorState_HP.update_user_info,
+                                    rx.icon(tag="save", stroke_width=2.5), "Update", on_click=DatabaseState.update_user_info,
                                     width='100%', bg=dark_green, color=light_green, spacing="10"),
                                 spacing='4',
                                 direction='row',
@@ -901,9 +860,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Category", on_blur=DataEditorState_HP.set_cat),
+                                    focus_border_color=normal_green, placeholder="Category", on_blur=DatabaseState.set_cat),
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Image_Path", on_blur=DataEditorState_HP.set_Image_Path),
+                                    focus_border_color=normal_green, placeholder="Image_Path", on_blur=DatabaseState.set_Image_Path),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -912,9 +871,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Header", on_blur=DataEditorState_HP.set_Header),
+                                    focus_border_color=normal_green, placeholder="Header", on_blur=DatabaseState.set_Header),
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Description", on_blur=DataEditorState_HP.set_Description),
+                                    focus_border_color=normal_green, placeholder="Description", on_blur=DatabaseState.set_Description),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -923,9 +882,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Tags", on_blur=DataEditorState_HP.set_Tags),
+                                    focus_border_color=normal_green, placeholder="Tags", on_blur=DatabaseState.set_Tags),
                                 rx.chakra.button(
-                                    rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DataEditorState_HP.add_data,
+                                    rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DatabaseState.add_data,
                                     width='100%', bg=dark_green, color=light_green, spacing="10"),
                                 spacing='4',
                                 direction='row',
@@ -949,13 +908,13 @@ def portal_true():
                 rx.chakra.button(
                     rx.icon(tag="refresh-ccw",
                             stroke_width=2.5), "Refresh Data",
-                    on_click=DataEditorState_HP.refresh_data, bg="#0C4466", color="#D2EAFC", width="100%", spacing="10"),
+                    on_click=DatabaseState.refresh_data, bg="#0C4466", color="#D2EAFC", width="100%", spacing="10"),
                 rx.chakra.input(
                     focus_border_color=normal_green, placeholder="Delete",
-                    on_blur=DataEditorState_HP.set_delete_id, width="100%"),
+                    on_blur=DatabaseState.set_delete_id, width="100%"),
                 rx.chakra.button(
                     rx.icon(tag="trash", stroke_width=2.5), "Delete",
-                    on_click=DataEditorState_HP.delete_data, width="100%", bg="#681212", color="#fef2f2", spacing="10"),
+                    on_click=DatabaseState.delete_data, width="100%", bg="#681212", color="#fef2f2", spacing="10"),
                 spacing='4',
                 direction='row'
             ),
@@ -964,9 +923,9 @@ def portal_true():
             rx.chakra.divider(border_color=normal_green),
             rx.hstack(
                 rx.data_editor(
-                    columns=DataEditorState_HP.cols,
-                    data=DataEditorState_HP.data,
-                    on_cell_edited=DataEditorState_HP.get_edited_data,
+                    columns=DatabaseState.cols,
+                    data=DatabaseState.data,
+                    on_cell_edited=DatabaseState.get_edited_data,
                     row_height=80,  # Adjusting row height for better readability
                     font_size="5em",
                     theme=DataEditorTheme(**dark_theme),
@@ -1038,8 +997,8 @@ app = rx.App(
         radius="large",
     )
 )
-app.add_page(index, on_load=DataEditorState_HP.refresh_data)
-app.add_page(portal, route="/portal", on_load=DataEditorState_HP.refresh_data)
+app.add_page(index, on_load=DatabaseState.refresh_data)
+app.add_page(portal, route="/portal", on_load=DatabaseState.refresh_data)
 ######################################################################
 ###############################   App   ##############################
 ######################################################################
