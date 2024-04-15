@@ -181,7 +181,7 @@ class DatabaseState(rx.State):
             cur = conn.cursor()
             sql = "INSERT INTO data (Category, Image_Path, Header, Description, Tags) VALUES (%s, %s, %s, %s, %s)"
             value = (
-                self.cat, self.Image_Path, self.Header,
+                self.cat.title(), self.Image_Path, self.Header,
                 self.Description, self.Tags)
             cur.execute(sql, value)
             conn.commit()
@@ -197,27 +197,36 @@ class DatabaseState(rx.State):
         col, row = pos
         conn = connect_db()
         cur = conn.cursor()
+        is_category = 2
         if col == 1:
             sql = "UPDATE data SET Category = %s WHERE Id = %s"
+            is_category = 1
             state = True
         elif col == 2:
             sql = "UPDATE data SET  Image_Path = %s WHERE Id = %s"
+            is_category = 0
             state = True
         elif col == 3:
             sql = "UPDATE data SET  Header = %s WHERE Id = %s"
+            is_category = 0
             state = True
         elif col == 4:
             sql = "UPDATE data SET  Description = %s WHERE Id = %s"
+            is_category = 0
             state = True
         elif col == 5:
             sql = "UPDATE data SET  Tags = %s WHERE Id = %s"
+            is_category = 0
             state = True
         else:
             state = False
             pass
 
         if state:
-            value = (val['data'], self.data[row][0])
+            if is_category :
+                value = (val['data'].title(), self.data[row][0])
+            else :
+                value = (val['data'], self.data[row][0])
             cur.execute(sql, value)
             conn.commit()
             cur.close()
@@ -804,9 +813,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder='User Name', value=DatabaseState.user_name, on_change=DatabaseState.set_user_nametemp),
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, type_="password", max_length="8", placeholder='Password', value=DatabaseState.password, on_change=DatabaseState.set_passwordtemp),
+                                    focus_border_color=normal_green, placeholder='User Name',width='70%', value=DatabaseState.user_name, on_change=DatabaseState.set_user_nametemp),
+                                rx.input(
+                                    focus_border_color=normal_green, type_="password",size = '3', max_length="8", placeholder='Password', value=DatabaseState.password, on_change=DatabaseState.set_passwordtemp),
                                 spacing='4',
                                 direction='row',
                             ),
