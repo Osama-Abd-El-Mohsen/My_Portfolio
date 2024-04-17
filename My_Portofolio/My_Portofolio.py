@@ -69,14 +69,17 @@ conn = connect_db()
 ##############################  Classes  #############################
 ######################################################################
 
+
 class State(rx.State):
     """The app state."""
 
+
 class DatabaseState(rx.State):
-    selected_category: str 
+    selected_category: str
+    selected_cat: str 
     unique_category_list = []
-    current_card_index : int = 0
-    data: list 
+    current_card_index: int = 0
+    data: list
     user_name: str = ''
     password: str = ''
     logo: str = ''
@@ -158,7 +161,6 @@ class DatabaseState(rx.State):
     (x, user_name, password, logo, pio) = Get_db_User_info()
     (x, user_nametemp, passwordtemp, logotemp, piotemp) = Get_db_User_info()
 
-    
     def update_user_info(self):
         self.user_name = self.user_nametemp
         self.password = self.passwordtemp
@@ -173,7 +175,7 @@ class DatabaseState(rx.State):
         cur.close()
         self.refresh_data()
     ###########################  User info  ###########################
-    
+
     #################  Add Skill & Skills tabel edit  #################
     def add_data(self):
         if self.cat != ' ' and self.Image_Path != ' ' and self.Header != ' ' and self.Description != ' ' and self.Tags != ' ':
@@ -223,21 +225,21 @@ class DatabaseState(rx.State):
             pass
 
         if state:
-            if is_category :
+            if is_category:
                 value = (val['data'].title(), self.data[row][0])
-            else :
+            else:
                 value = (val['data'], self.data[row][0])
             cur.execute(sql, value)
             conn.commit()
             cur.close()
             self.refresh_data()
-    
+
     def set_delete_id(self, text: str):
         try:
             self.delete_id = int(text)
         except:
             pass
-    
+
     def delete_data(self):
         try:
             conn = connect_db()
@@ -284,7 +286,8 @@ class DatabaseState(rx.State):
             self.tags.append(card[5])
 
         for index, tag in enumerate(self.tags):
-            self.tags[index] = tag.split(',')
+            tagsTitle = [word.title() for word in tag.split(',')]
+            self.tags[index] = tagsTitle
         number_of_data = len(self.id)
     ##########################  Refresh Data  #########################
 
@@ -293,7 +296,10 @@ class DatabaseState(rx.State):
         self.selected_category = category
         self.get_current_cat_data()
         self.current_card_index = 0
-    
+
+    def select_category2(self, category):
+        self.selected_cat = category
+
     def get_unique_cat(self):
         self.unique_category_list = []
         conn = connect_db()
@@ -310,22 +316,24 @@ class DatabaseState(rx.State):
     def get_current_cat_data(self):
         conn = connect_db()
         cur = conn.cursor()
-        cur.execute(f"SELECT * FROM data WHERE Category = '{self.selected_category}'")
+        cur.execute(
+            f"SELECT * FROM data WHERE Category = '{self.selected_category}'")
         output = list(cur.fetchall())
         cur.close()
         self.elements_in_selected_category = len(output)
 
-        self.headers = [] 
-        self.desc = [] 
-        self.image_path = [] 
-        self.tags = [] 
+        self.headers = []
+        self.desc = []
+        self.image_path = []
+        self.tags = []
 
         for element in output:
             self.id.append(element[0])
             self.image_path.append(element[2])
             self.headers.append(element[3])
             self.desc.append(element[4])
-            self.tags.append(element[5].split(','))
+            tagsTitle = [word.title() for word in element[5].split(',')]
+            self.tags.append(tagsTitle)
 
         # print("="*50)
         # print("From get_current_cat_data")
@@ -593,7 +601,6 @@ def password_ui():
     )
 
 
-
 ######################################################################
 ######################  Helper Funcs & Password  #####################
 ######################################################################
@@ -601,7 +608,6 @@ def password_ui():
 ######################################################################
 ###############################  Pages  ##############################
 ######################################################################
-
 code_text_desktop = """
 var TxtType = function(el, toRotate, period) {
         this.toRotate = toRotate;
@@ -672,6 +678,13 @@ def add_buttons_group(button_label):
             DatabaseState.selected_category == button_label,
             "green",
             "gray"))
+
+def add_buttons_group2(button_label):
+    return rx.chakra.button(
+        button_label,
+        on_click=lambda: DatabaseState.select_category2(button_label),
+        font_size=["1em", "1.5em"],
+)
 
 
 def index() -> rx.Component:
@@ -813,9 +826,9 @@ def portal_true():
                         rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder='User Name',width='70%', value=DatabaseState.user_name, on_change=DatabaseState.set_user_nametemp),
+                                    focus_border_color=normal_green, placeholder='User Name', width='70%', value=DatabaseState.user_name, on_change=DatabaseState.set_user_nametemp),
                                 rx.input(
-                                    focus_border_color=normal_green, type_="password",size = '3', max_length="8", placeholder='Password', value=DatabaseState.password, on_change=DatabaseState.set_passwordtemp),
+                                    focus_border_color=normal_green, type_="password", size='3', max_length="8", placeholder='Password', value=DatabaseState.password, on_change=DatabaseState.set_passwordtemp),
                                 spacing='4',
                                 direction='row',
                             ),
@@ -867,9 +880,27 @@ def portal_true():
                             variant='ghost'
                         ),
                         rx.card(
+                            rx.chakra.responsive_grid(
+                                rx.scroll_area(
+                                    rx.chakra.button_group(
+                                        rx.foreach(
+                                            DatabaseState.unique_category_list,
+                                            add_buttons_group2),
+                                        is_attached=True,
+                                        variant='solid',
+                                        size="md",
+                                    ),
+                                    direction="row",
+                                ),
+                                columns=[1],
+                            ),
+                            spacing='4',
+                            variant='ghost'
+                        ),
+                        rx.card(
                             rx.flex(
                                 rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Category", on_blur=DatabaseState.set_cat),
+                                    focus_border_color=normal_green, placeholder="Category", on_blur=DatabaseState.set_cat , value=DatabaseState.selected_cat,on_change = DatabaseState.set_selected_cat),
                                 rx.chakra.input(
                                     focus_border_color=normal_green, placeholder="Image_Path", on_blur=DatabaseState.set_Image_Path),
                                 spacing='4',
