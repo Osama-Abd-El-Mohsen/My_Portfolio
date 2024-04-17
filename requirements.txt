@@ -1,3 +1,2 @@
-reflex==0.4.5
-mysql-connector-python
-pymysql
+PyMySQL==1.1.0
+reflex==0.4.8
