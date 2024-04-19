@@ -76,7 +76,7 @@ class State(rx.State):
 
 class DatabaseState(rx.State):
     selected_category: str
-    selected_cat: str 
+    selected_cat: str
     unique_category_list = []
     current_card_index: int = 0
     data: list
@@ -262,7 +262,7 @@ class DatabaseState(rx.State):
         self.data = []
         conn = connect_db()
         cur = conn.cursor()
-        cur.execute("select * from data")
+        cur.execute("SELECT * FROM data ORDER BY Category ASC")
         output = list(cur.fetchall())
         cur.close()
         self.data += output
@@ -304,7 +304,7 @@ class DatabaseState(rx.State):
         self.unique_category_list = []
         conn = connect_db()
         cur = conn.cursor()
-        cur.execute("SELECT DISTINCT Category FROM data")
+        cur.execute("SELECT DISTINCT Category FROM data ORDER BY Category ASC")
         output = list(cur.fetchall())
         cur.close()
         for category in output:
@@ -679,12 +679,13 @@ def add_buttons_group(button_label):
             "green",
             "gray"))
 
+
 def add_buttons_group2(button_label):
     return rx.chakra.button(
         button_label,
         on_click=lambda: DatabaseState.select_category2(button_label),
         font_size=["1em", "1.5em"],
-)
+    )
 
 
 def index() -> rx.Component:
@@ -812,132 +813,134 @@ def portal_true():
             rx.chakra.spacer(),
             rx.chakra.spacer(),
             rx.hstack(
-                rx.flex(
-                    rx.card(
+                rx.center(
+                    rx.chakra.responsive_grid(
                         rx.card(
-                            rx.flex(
+                            rx.card(
                                 rx.chakra.text(
-                                    'Update User Info'.upper(), color=normal_green, font_family="Hackonedash", font_size='3em'),
-                                spacing='4',
-                                direction='row',
-                            ),
-                            variant='ghost'
-                        ),
-                        rx.card(
-                            rx.flex(
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder='User Name', width='70%', value=DatabaseState.user_name, on_change=DatabaseState.set_user_nametemp),
-                                rx.input(
-                                    focus_border_color=normal_green, type_="password", size='3', max_length="8", placeholder='Password', value=DatabaseState.password, on_change=DatabaseState.set_passwordtemp),
-                                spacing='4',
-                                direction='row',
-                            ),
-                            variant='ghost'
-                        ),
-                        rx.card(
-                            rx.flex(
-                                rx.chakra.text_area(
-                                    focus_border_color=normal_green, placeholder='pio', font_size="1em", width='100%', value=DatabaseState.pio, on_change=DatabaseState.set_piotemp),
-                                spacing='4',
-                                direction='row',
-                            ),
-                            variant='ghost'
-                        ),
-                        rx.card(
-                            rx.flex(
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder='Icon url', value=DatabaseState.logo, on_change=DatabaseState.set_logotemp),
-                                rx.chakra.button(
-                                    rx.icon(tag="save", stroke_width=2.5), "Update", on_click=DatabaseState.update_user_info,
-                                    width='100%', bg=dark_green, color=light_green, spacing="10"),
-                                spacing='4',
-                                direction='row',
-                            ),
-                            variant='ghost'
-                        ),
-                        variant='ghost'
-                    ),
-                    rx.chakra.spacer(),
-                    rx.chakra.spacer(),
-                    rx.chakra.spacer(),
-                    rx.chakra.center(
-                        rx.chakra.divider(
-                            border_color=normal_green, orientation="vertical"),
-                        height="20em",
-                        align='center'
-                    ),
-                    rx.chakra.spacer(),
-                    rx.chakra.spacer(),
-                    rx.chakra.spacer(),
-                    rx.card(
-                        rx.card(
-                            rx.flex(
-                                rx.chakra.text(
-                                    'Update Data '.upper(), color=normal_green, font_family="Hackonedash", font_size='3em'),
-                                spacing='4',
-                                direction='row',
-                            ),
-                            variant='ghost'
-                        ),
-                        rx.card(
-                            rx.chakra.responsive_grid(
-                                rx.scroll_area(
-                                    rx.chakra.button_group(
-                                        rx.foreach(
-                                            DatabaseState.unique_category_list,
-                                            add_buttons_group2),
-                                        is_attached=True,
-                                        variant='solid',
-                                        size="md",
+                                    'Update User Info'.upper(), color=normal_green, font_family="Hackonedash", font_size=['1.5em', '2em', '3em']),
+
+                                rx.card(
+                                    rx.flex(
+                                        rx.chakra.input(
+                                            focus_border_color=normal_green, placeholder='User Name', value=DatabaseState.user_name, on_change=DatabaseState.set_user_nametemp),
+                                        rx.input(
+                                            focus_border_color=normal_green, type_="password", size='3', max_length="8", placeholder='Password', value=DatabaseState.password, on_change=DatabaseState.set_passwordtemp),
+                                        spacing='4',
+                                        direction='row',
                                     ),
-                                    direction="row",
+                                    variant='ghost',
                                 ),
-                                columns=[1],
-                            ),
-                            spacing='4',
-                            variant='ghost'
-                        ),
-                        rx.card(
-                            rx.flex(
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Category", on_blur=DatabaseState.set_cat , value=DatabaseState.selected_cat,on_change = DatabaseState.set_selected_cat),
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Image_Path", on_blur=DatabaseState.set_Image_Path),
-                                spacing='4',
-                                direction='row',
-                            ),
-                            variant='ghost'
-                        ),
-                        rx.card(
-                            rx.flex(
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Header", on_blur=DatabaseState.set_Header),
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Description", on_blur=DatabaseState.set_Description),
-                                spacing='4',
-                                direction='row',
+
+                                rx.card(
+                                    rx.chakra.text_area(
+                                        focus_border_color=normal_green, placeholder='pio', font_size="1em",  value=DatabaseState.pio, on_change=DatabaseState.set_piotemp),
+                                    spacing='4',
+                                    variant='ghost',
+                                ),
+
+                                rx.card(
+                                    rx.flex(
+                                        rx.chakra.input(
+                                            focus_border_color=normal_green, placeholder='Icon url', value=DatabaseState.logo, on_change=DatabaseState.set_logotemp),
+                                        rx.chakra.button(
+                                            rx.icon(tag="save", stroke_width=2.5), "Update", on_click=DatabaseState.update_user_info,
+                                            bg=dark_green, color=light_green, spacing="10"),
+                                        spacing='4',
+                                        direction='row',
+                                    ),
+                                    variant='ghost',
+                                ),
+                                variant='ghost',
+                                spacing='4'
                             ),
                             variant='ghost',
+                            width='100%',
+                            align='center',
+                        ),
+
+                        rx.mobile_only(
+                            rx.chakra.divider(border_color=normal_green),
                         ),
                         rx.card(
-                            rx.flex(
-                                rx.chakra.input(
-                                    focus_border_color=normal_green, placeholder="Tags", on_blur=DatabaseState.set_Tags),
-                                rx.chakra.button(
-                                    rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DatabaseState.add_data,
-                                    width='100%', bg=dark_green, color=light_green, spacing="10"),
-                                spacing='4',
-                                direction='row',
+                            rx.card(
+                                rx.flex(
+                                    rx.chakra.text(
+                                        'Update Data '.upper(), color=normal_green, font_family="Hackonedash", font_size=['1.5em', '2em', '3em']),
+                                    direction='row',
+                                    variant='ghost',
+                                    spacing='4'
+                                ),
+
+                                rx.card(
+                                    rx.chakra.responsive_grid(
+                                        rx.scroll_area(
+                                            rx.chakra.button_group(
+                                                rx.foreach(
+                                                    DatabaseState.unique_category_list,
+                                                    add_buttons_group2),
+                                                is_attached=True,
+                                                variant='solid',
+                                                size="md",
+                                            ),
+                                            direction="row",
+                                            align='center'
+                                        ),
+                                        columns=[1],
+                                        align='center'
+                                    ),
+                                    variant='ghost',
+                                    spacing='4',
+                                ),
+                                rx.card(
+                                    rx.flex(
+                                        rx.chakra.input(
+                                            focus_border_color=normal_green, placeholder="Category", on_blur=DatabaseState.set_cat, value=DatabaseState.selected_cat, on_change=DatabaseState.set_selected_cat),
+                                        rx.chakra.input(
+                                            focus_border_color=normal_green, placeholder="Image_Path", on_blur=DatabaseState.set_Image_Path),
+                                        spacing='4',
+                                        direction='row',
+                                    ),
+                                    variant='ghost',
+                                    spacing='4'
+                                ),
+                                rx.card(
+                                    rx.flex(
+                                        rx.chakra.input(
+                                            focus_border_color=normal_green, placeholder="Header", on_blur=DatabaseState.set_Header),
+                                        rx.chakra.input(
+                                            focus_border_color=normal_green, placeholder="Description", on_blur=DatabaseState.set_Description),
+                                        spacing='4',
+                                        direction='row',
+                                    ),
+                                    variant='ghost',
+                                    spacing='4'
+                                ),
+                                rx.card(
+                                    rx.flex(
+                                        rx.chakra.input(
+                                            focus_border_color=normal_green, placeholder="Tags", on_blur=DatabaseState.set_Tags),
+                                        rx.chakra.button(
+                                            rx.icon(tag="plus", stroke_width=2.5), "Add", on_click=DatabaseState.add_data,
+                                            bg=dark_green, color=light_green, spacing="10"),
+                                        spacing='4',
+                                        direction='row',
+                                    ),
+                                    variant='ghost',
+                                    spacing='4'
+                                ),
+                                variant='ghost',
                             ),
                             variant='ghost',
+                            width='100%',
+                            align='center',
                         ),
                         variant='ghost',
+                        spacing='4',
                         direction='row',
+                        columns=[1, 2]
                     ),
-                    variant='ghost',
-                    spacing='4',
-                    direction='row',
-                )
+                ),
             ),
             rx.chakra.spacer(),
             rx.chakra.spacer(),
@@ -948,37 +951,49 @@ def portal_true():
                 rx.chakra.button(
                     rx.icon(tag="refresh-ccw",
                             stroke_width=2.5), "Refresh Data",
-                    on_click=DatabaseState.refresh_data, bg="#0C4466", color="#D2EAFC", width="100%", spacing="10"),
+                    on_click=DatabaseState.refresh_data, bg="#0C4466", color="#D2EAFC", width="100%", spacing="10",font_size = ["1em","1.5em"]),
                 rx.chakra.input(
                     focus_border_color=normal_green, placeholder="Delete",
                     on_blur=DatabaseState.set_delete_id, width="100%"),
                 rx.chakra.button(
                     rx.icon(tag="trash", stroke_width=2.5), "Delete",
-                    on_click=DatabaseState.delete_data, width="100%", bg="#681212", color="#fef2f2", spacing="10"),
+                    on_click=DatabaseState.delete_data, width="100%", bg="#681212", color="#fef2f2", spacing="10",font_size = ["1em","1.5em"]),
                 spacing='4',
                 direction='row'
             ),
             rx.chakra.spacer(),
             rx.chakra.spacer(),
             rx.chakra.divider(border_color=normal_green),
-            rx.hstack(
-                rx.data_editor(
-                    columns=DatabaseState.cols,
-                    data=DatabaseState.data,
-                    on_cell_edited=DatabaseState.get_edited_data,
-                    row_height=80,  # Adjusting row height for better readability
-                    font_size="5em",
-                    theme=DataEditorTheme(**dark_theme),
-                    fixed_shadow_x=False,
-                    fixed_shadow_y=False,
-                    column_select='none'
-
-
+            rx.chakra.spacer(),
+            rx.chakra.spacer(),
+            rx.center(
+                rx.card(
+                    rx.scroll_area(
+                        rx.data_editor(
+                            columns=DatabaseState.cols,
+                            data=DatabaseState.data,
+                            on_cell_edited=DatabaseState.get_edited_data,
+                            font_size=["1.2em", '2em', '3em', '5em'],
+                            theme=DataEditorTheme(**dark_theme),
+                            fixed_shadow_x=False,
+                            fixed_shadow_y=False,
+                            column_select='none',
+                            row_height=50
+                        ),
+                        width=['350px', '500px', '700px', '100%'],
+                    ),
+                    align='center',
+                    class_name='glass-card',
+                    variant='ghost'
                 ),
-
+                align='center'
             ),
+
         ),
-        padding="5em"
+        pt="5em",
+        pr='1em',
+        pl='1em',
+        pb="5em",
     )
 
 
